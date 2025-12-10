@@ -2,7 +2,7 @@ services:
   masonry-server:
     hostname: masonry-server
     container_name: masonry-server
-    image: ghcr.io/smukherj1/expenses/masonry/server:latest
+    image: ghcr.io/smukherj1/masonry/server:latest
     restart: unless-stopped
     ports:
       - "4000:4000"
