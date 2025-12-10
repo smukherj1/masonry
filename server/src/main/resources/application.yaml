@@ -1,0 +1,11 @@
+spring:
+  grpc:
+    server:
+      port: 4000
+  profiles:
+    active: dev # Default profile for local development.
+  application:
+    name: server
+  jpa:
+    hibernate:
+      ddl-auto: update

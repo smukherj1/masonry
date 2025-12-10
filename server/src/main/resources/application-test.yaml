@@ -1,0 +1,8 @@
+# Profile when running the Spring App locally as a Docker container for
+# testing.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://masonry-db:5432/masonry
+    username: masonry
+    password: password
