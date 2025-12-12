@@ -1,7 +1,6 @@
 package com.github.smukherj1.masonry.server.services
 
 import com.github.smukherj1.masonry.server.models.BlobUploadModel
-import com.github.smukherj1.masonry.server.proto.BeginUploadRequest
 import com.github.smukherj1.masonry.server.repositories.BlobRepository
 import com.github.smukherj1.masonry.server.repositories.BlobUploadRepository
 import org.springframework.stereotype.Service
@@ -24,7 +23,7 @@ class BlobUploadService(
             uploadId = uploadId,
             createTime = now,
             updateTime = now,
-            nextOffset = 0UL,
+            nextOffset = 0L,
             location = uploadPath(uploadId)
         ))
     }

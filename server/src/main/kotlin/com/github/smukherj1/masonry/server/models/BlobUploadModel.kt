@@ -16,5 +16,5 @@ data class BlobUploadModel(
     @Column(nullable = false)
     val location: String,
     @Column(nullable = false)
-    val nextOffset: ULong,
+    val nextOffset: Long,
 )

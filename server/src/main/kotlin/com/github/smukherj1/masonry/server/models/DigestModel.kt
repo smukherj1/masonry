@@ -9,7 +9,7 @@ data class DigestModel(
     @Column(nullable = false)
     val hash: ByteArray,
     @Column(nullable = false)
-    val sizeBytes: UInt,
+    val sizeBytes: Long,
 ) : Serializable {
     override fun equals(other: Any?): Boolean {
         if(this === other) return true
