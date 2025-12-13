@@ -9,24 +9,15 @@ option java_outer_classname = "BlobServiceProto";
 import "digest.proto";
 
 service BlobsService {
-  rpc BeginUpload(BeginUploadRequest) returns (BeginUploadResponse) {}
   rpc Upload(stream UploadRequest) returns (UploadResponse) {}
+  rpc GetUpload(GetUploadRequest) returns (GetUploadResponse) {}
   rpc CompleteUpload(CompleteUploadRequest) returns (CompleteUploadResponse) {}
   rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
 }
 
-message BeginUploadRequest {
+message UploadRequest {
   // Unique identifier for the upload request. Must be unique across all uploads currently active on this server.
   // Using a UUID is recommended.
-  string upload_id = 1;
-}
-
-// Returned if an upload with the requested id was accepted.
-message BeginUploadResponse {
-  string upload_id = 1;
-}
-
-message UploadRequest {
   string upload_id = 1;
   uint64 offset = 2;
   bytes data = 3;
@@ -34,6 +25,23 @@ message UploadRequest {
 message UploadResponse {
   string upload_id = 1;
   uint64 next_offset = 2;
+}
+
+message GetUploadRequest {
+  string upload_id = 1;
+}
+
+enum UploadStatus {
+  UPLOAD_STATUS_UNSPECIFIED = 0;
+  UPLOAD_STATUS_ACTIVE = 1;
+  UPLOAD_STATUS_COMPLETED = 2;
+  UPLOAD_STATUS_FAILED = 3;
+}
+
+message GetUploadResponse {
+  string upload_id = 1;
+  uint64 next_offset = 2;
+  UploadStatus upload_status = 3;
 }
 
 message CompleteUploadRequest {
