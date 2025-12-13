@@ -27,6 +27,8 @@ class BlobUploadService(
             location = uploadPath(uploadId)
         ))
     }
+
+    fun upload(uploadId: String, offset: Long, data: ByteArray) {}
 }
 
 private fun uploadPath(uploadId: String) = "uploads/${uploadId}"

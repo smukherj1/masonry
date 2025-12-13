@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package digest;
+
+option java_package = "com.github.smukherj1.masonry.server.proto";
+option java_multiple_files = true;
+option java_outer_classname = "DigestProto";
+
+message Digest {
+  string hash = 1;
+  uint64 size_bytes = 2;
+}
