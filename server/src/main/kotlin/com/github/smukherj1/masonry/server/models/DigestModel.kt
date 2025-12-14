@@ -1,5 +1,7 @@
 package com.github.smukherj1.masonry.server.models
 
+import com.github.smukherj1.masonry.server.proto.Digest
+import com.github.smukherj1.masonry.server.extensions.toHexString
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import java.io.Serializable
@@ -11,6 +13,13 @@ data class DigestModel(
     @Column(nullable = false)
     val sizeBytes: Long,
 ) : Serializable {
+
+    val proto: Digest
+    get() = Digest.newBuilder()
+        .setHash(hash.toHexString())
+        .setSizeBytes(sizeBytes)
+        .build()
+
     override fun equals(other: Any?): Boolean {
         if(this === other) return true
         if(javaClass != other?.javaClass) return false

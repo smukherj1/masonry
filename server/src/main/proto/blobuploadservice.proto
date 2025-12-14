@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package blobuploadservice;
+
+import "digest.proto";
+
+option java_package = "com.github.smukherj1.masonry.server.proto";
+option java_multiple_files = true;
+option java_outer_classname = "BlobUploadServiceProto";
+
+service BlobsUploadService {
+  rpc Upload(stream BlobUploadRequest) returns (BlobUploadResponse) {}
+  rpc Query(BlobUploadQueryRequest) returns (BlobUploadQueryResponse) {}
+  rpc Complete(BlobUploadCompleteRequest) returns (BlobUploadCompleteResponse) {}
+}
+
+message BlobUploadRequest {
+  // Unique identifier for the upload request. Must be unique across all uploads currently active on this server.
+  // Using a UUID is recommended.
+  string upload_id = 1;
+  uint64 offset = 2;
+  bytes data = 3;
+}
+message BlobUploadResponse {
+  uint64 next_offset = 1;
+}
+
+message BlobUploadQueryRequest {
+  string upload_id = 1;
+}
+
+enum UploadStatus {
+  UPLOAD_STATUS_UNSPECIFIED = 0;
+  UPLOAD_STATUS_ACTIVE = 1;
+  UPLOAD_STATUS_FINALIZING = 2;
+  UPLOAD_STATUS_COMPLETED = 3;
+  UPLOAD_STATUS_FAILED = 4;
+}
+
+message BlobUploadQueryResponse {
+  uint64 next_offset = 1;
+  UploadStatus upload_status = 2;
+}
+
+message BlobUploadCompleteRequest {
+  string upload_id = 1;
+}
+message BlobUploadCompleteResponse {
+  digest.Digest digest = 1;
+}

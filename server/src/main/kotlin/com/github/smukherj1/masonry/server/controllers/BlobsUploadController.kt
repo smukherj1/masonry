@@ -2,13 +2,13 @@ package com.github.smukherj1.masonry.server.controllers
 
 import com.github.smukherj1.masonry.server.errors.safeRun
 import com.github.smukherj1.masonry.server.models.UploadStatus
-import com.github.smukherj1.masonry.server.proto.BlobsServiceGrpc
-import com.github.smukherj1.masonry.server.proto.CompleteUploadRequest
-import com.github.smukherj1.masonry.server.proto.CompleteUploadResponse
-import com.github.smukherj1.masonry.server.proto.GetUploadRequest
-import com.github.smukherj1.masonry.server.proto.GetUploadResponse
-import com.github.smukherj1.masonry.server.proto.UploadRequest
-import com.github.smukherj1.masonry.server.proto.UploadResponse
+import com.github.smukherj1.masonry.server.proto.BlobsUploadServiceGrpc
+import com.github.smukherj1.masonry.server.proto.BlobUploadCompleteRequest
+import com.github.smukherj1.masonry.server.proto.BlobUploadCompleteResponse
+import com.github.smukherj1.masonry.server.proto.BlobUploadQueryRequest
+import com.github.smukherj1.masonry.server.proto.BlobUploadQueryResponse
+import com.github.smukherj1.masonry.server.proto.BlobUploadRequest
+import com.github.smukherj1.masonry.server.proto.BlobUploadResponse
 import com.github.smukherj1.masonry.server.services.BlobUploadService
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
@@ -17,19 +17,19 @@ import org.springframework.grpc.server.service.GrpcService
 import java.util.UUID
 
 @GrpcService
-class BlobsServiceController(
+class BlobsUploadController(
     val blobUploadService: BlobUploadService
-    ) : BlobsServiceGrpc.BlobsServiceImplBase() {
+    ) : BlobsUploadServiceGrpc.BlobsUploadServiceImplBase() {
 
-    val log = LoggerFactory.getLogger(BlobsServiceController::class.java)
+    val log = LoggerFactory.getLogger(BlobsUploadController::class.java)
 
-    override fun upload(responseObserver: StreamObserver<UploadResponse?>?): StreamObserver<UploadRequest?>? {
+    override fun upload(responseObserver: StreamObserver<BlobUploadResponse?>?): StreamObserver<BlobUploadRequest?>? {
         if (responseObserver == null) return null
-        return object : StreamObserver<UploadRequest?>{
+        return object : StreamObserver<BlobUploadRequest?>{
             var uploadId: String? = null
             var serverUploadId: String? = null
 
-            override fun onNext(u: UploadRequest?) {
+            override fun onNext(u: BlobUploadRequest?) {
                 if(u == null) return
                 if(u.uploadId.isNullOrBlank()) return
                 if(uploadId == null) {
@@ -50,7 +50,7 @@ class BlobsServiceController(
 
             override fun onCompleted() {
                 log.info("upload(): uploadId=${uploadId} completed.")
-                responseObserver.onNext(UploadResponse.newBuilder().setUploadId(uploadId).build())
+                responseObserver.onNext(BlobUploadResponse.newBuilder().build())
                 responseObserver.onCompleted()
             }
 
@@ -62,7 +62,7 @@ class BlobsServiceController(
         }
     }
 
-    override fun getUpload(request: GetUploadRequest?, responseObserver: StreamObserver<GetUploadResponse?>?) {
+    override fun query(request: BlobUploadQueryRequest?, responseObserver: StreamObserver<BlobUploadQueryResponse?>?)  {
         if (responseObserver == null) return
         responseObserver.safeRun {
             require(request != null) { "request must not be null" }
@@ -75,12 +75,12 @@ class BlobsServiceController(
                 return@safeRun
             }
             responseObserver.onNext(
-                GetUploadResponse.newBuilder()
-                .setUploadId(um.uploadId)
+                BlobUploadQueryResponse.newBuilder()
                     .setNextOffset(um.nextOffset)
                     .setUploadStatus(when(um.uploadStatus) {
                         UploadStatus.UNKNOWN -> com.github.smukherj1.masonry.server.proto.UploadStatus.UPLOAD_STATUS_UNSPECIFIED
                         UploadStatus.ACTIVE -> com.github.smukherj1.masonry.server.proto.UploadStatus.UPLOAD_STATUS_ACTIVE
+                        UploadStatus.FINALIZING -> com.github.smukherj1.masonry.server.proto.UploadStatus.UPLOAD_STATUS_FINALIZING
                         UploadStatus.COMPLETED -> com.github.smukherj1.masonry.server.proto.UploadStatus.UPLOAD_STATUS_COMPLETED
                         UploadStatus.FAILED -> com.github.smukherj1.masonry.server.proto.UploadStatus.UPLOAD_STATUS_FAILED
                     })
@@ -89,11 +89,21 @@ class BlobsServiceController(
         }
     }
 
-    override fun completeUpload(
-        request: CompleteUploadRequest?,
-        responseObserver: StreamObserver<CompleteUploadResponse?>?
-    ) {
-        super.completeUpload(request, responseObserver)
+    override fun complete(
+        request: BlobUploadCompleteRequest?,
+        responseObserver: StreamObserver<BlobUploadCompleteResponse?>?
+    )  {
+        requireNotNull(request) { "request must not be null" }
+        if (responseObserver == null) return
+        responseObserver.safeRun {
+            val blobModel = blobUploadService.completeUpload(request.uploadId)
+            responseObserver.onNext(
+                BlobUploadCompleteResponse.newBuilder()
+                    .setDigest(
+                        blobModel.digest.proto
+                    ).build()
+            )
+        }
     }
 
 

@@ -1,10 +1,13 @@
 package com.github.smukherj1.masonry.server.models
 
 import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.persistence.Embedded
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
+import org.bouncycastle.crypto.digests.SHA256Digest
 import java.time.LocalDateTime
 
 @Entity
@@ -23,15 +26,34 @@ data class BlobUploadModel(
     val updateTime: LocalDateTime,
     @Column(nullable = false)
     val location: String,
+    @Embedded
+    val hasherState: HasherState,
     @Column(nullable = false)
     val nextOffset: Long,
     @Enumerated(EnumType.STRING)
     val uploadStatus: UploadStatus
-)
-
+) {
+    val digester: SHA256Digest
+        get() = if(hasherState.state == null) SHA256Digest() else SHA256Digest(hasherState.state)
+}
 enum class UploadStatus {
     UNKNOWN,
     ACTIVE,
+    FINALIZING,
     COMPLETED,
     FAILED
+}
+
+@Embeddable
+data class HasherState (
+    val state: ByteArray? = null,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as HasherState
+        return state.contentEquals(other.state)
+    }
+
+    override fun hashCode(): Int = state.contentHashCode()
 }

@@ -1,63 +1,34 @@
+
 syntax = "proto3";
 
 package blobservice;
+
+import "google/protobuf/timestamp.proto";
+import "digest.proto";
 
 option java_package = "com.github.smukherj1.masonry.server.proto";
 option java_multiple_files = true;
 option java_outer_classname = "BlobServiceProto";
 
-import "digest.proto";
-
-service BlobsService {
-  rpc Upload(stream UploadRequest) returns (UploadResponse) {}
-  rpc GetUpload(GetUploadRequest) returns (GetUploadResponse) {}
-  rpc CompleteUpload(CompleteUploadRequest) returns (CompleteUploadResponse) {}
-  rpc Download(DownloadRequest) returns (stream DownloadResponse) {}
+service BlobService {
+  rpc Query(BlobQueryRequest) returns(BlobQueryResponse) {}
+  rpc Download(BlobDownloadRequest) returns (stream BlobDownloadResponse) {}
 }
 
-message UploadRequest {
-  // Unique identifier for the upload request. Must be unique across all uploads currently active on this server.
-  // Using a UUID is recommended.
-  string upload_id = 1;
-  uint64 offset = 2;
-  bytes data = 3;
-}
-message UploadResponse {
-  string upload_id = 1;
-  uint64 next_offset = 2;
+message BlobQueryRequest {
+  digest.Digest digest = 1;
 }
 
-message GetUploadRequest {
-  string upload_id = 1;
+message BlobQueryResponse{
+  google.protobuf.Timestamp created_at = 1;
 }
 
-enum UploadStatus {
-  UPLOAD_STATUS_UNSPECIFIED = 0;
-  UPLOAD_STATUS_ACTIVE = 1;
-  UPLOAD_STATUS_COMPLETED = 2;
-  UPLOAD_STATUS_FAILED = 3;
-}
-
-message GetUploadResponse {
-  string upload_id = 1;
-  uint64 next_offset = 2;
-  UploadStatus upload_status = 3;
-}
-
-message CompleteUploadRequest {
-  string upload_id = 1;
-}
-message CompleteUploadResponse {
-  string upload_id = 1;
-  digest.Digest digest = 2;
-}
-
-message DownloadRequest {
+message BlobDownloadRequest {
   digest.Digest digest = 1;
   uint64 offset = 2;
   uint64 limit = 3;
 }
-message DownloadResponse {
+message BlobDownloadResponse {
   digest.Digest digest = 1;
   uint64 offset = 2;
   bytes data = 3;
