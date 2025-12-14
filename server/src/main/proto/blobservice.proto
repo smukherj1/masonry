@@ -29,7 +29,6 @@ message BlobDownloadRequest {
   uint64 limit = 3;
 }
 message BlobDownloadResponse {
-  digest.Digest digest = 1;
-  uint64 offset = 2;
-  bytes data = 3;
+  uint64 offset = 1;
+  bytes data = 2;
 }

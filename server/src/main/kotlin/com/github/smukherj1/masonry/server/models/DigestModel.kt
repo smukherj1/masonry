@@ -14,6 +14,11 @@ data class DigestModel(
     val sizeBytes: Long,
 ) : Serializable {
 
+    constructor(digest: Digest): this(
+        hash = digest.hash.hexToByteArray(),
+        sizeBytes = digest.sizeBytes
+    )
+
     val proto: Digest
     get() = Digest.newBuilder()
         .setHash(hash.toHexString())
