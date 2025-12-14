@@ -42,7 +42,7 @@ class BlobUploadService(
         bp.createDirectories()
     }
 
-    fun upload(uploadId: String, serverUploadId: String, offset: Long, data: ByteArray) {
+    fun upload(uploadId: String, serverUploadId: String, offset: Long, data: ByteArray): BlobUploadModel {
         val uploadModel = getOrCreateUpload(uploadId = uploadId, serverUploadId = serverUploadId)
         require(uploadModel.uploadStatus == UploadStatus.ACTIVE, {"unable to upload with id $uploadId because its state is currently ${uploadModel.uploadStatus}"})
         require(offset == uploadModel.nextOffset, {"given offset $offset does not match currently expected next offset ${uploadModel.nextOffset}"})
@@ -81,7 +81,7 @@ class BlobUploadService(
             throw RuntimeException("error writing ${data.size} bytes of data for upload $uploadId, offset $offset")
         }
         val now = localDateTimeNow()
-        blobUploadRepository.save(uploadModel.copy(
+        return blobUploadRepository.save(uploadModel.copy(
             updateTime = now,
             nextOffset = offset + data.size,
             hasherState = HasherState(digester.encodedState)

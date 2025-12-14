@@ -28,6 +28,7 @@ class BlobsUploadController(
         return object : StreamObserver<BlobUploadRequest?>{
             var uploadId: String? = null
             var serverUploadId: String? = null
+            var nextOffset: Long? = null
 
             override fun onNext(u: BlobUploadRequest?) {
                 if(u == null) return
@@ -35,6 +36,7 @@ class BlobsUploadController(
                 if(uploadId == null) {
                     uploadId = u.uploadId
                     serverUploadId = UUID.randomUUID().toString()
+                    nextOffset = 0
                 } else if (!uploadId.equals(u.uploadId)) {
                     responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("uploadId can't be changed mid-stream, got initial id $uploadId but current id is ${u.uploadId}").asRuntimeException())
                     return
@@ -44,13 +46,18 @@ class BlobsUploadController(
                 }
                 log.info("upload(): uploadId=${u.uploadId}, serverUploadId=${serverUploadId}, offset=${u.offset}, ${u.data.size()} bytes of data.")
                 responseObserver.safeRun {
-                    blobUploadService.upload(uploadId = u.uploadId, serverUploadId = serverUploadId.orEmpty(), offset = u.offset, data = u.data.toByteArray())
+                    val blobUpload = blobUploadService.upload(uploadId = u.uploadId, serverUploadId = serverUploadId.orEmpty(), offset = u.offset, data = u.data.toByteArray())
+                    nextOffset = blobUpload.nextOffset
                 }
             }
 
             override fun onCompleted() {
                 log.info("upload(): uploadId=${uploadId} completed.")
-                responseObserver.onNext(BlobUploadResponse.newBuilder().build())
+                val respBuilder = BlobUploadResponse.newBuilder()
+                if(nextOffset != null) {
+                    respBuilder.setNextOffset(nextOffset ?: 0)
+                }
+                responseObserver.onNext(respBuilder.build())
                 responseObserver.onCompleted()
             }
 
