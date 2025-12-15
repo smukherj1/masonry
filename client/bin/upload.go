@@ -29,7 +29,6 @@ func newClients() (*clients, func() error, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to dial server at %v: %w", *serverAddr, err)
 	}
-	defer conn.Close()
 	return &clients{
 		blobsUploadClient: pb.NewBlobsUploadServiceClient(conn),
 		blobsClient:       pb.NewBlobServiceClient(conn),
