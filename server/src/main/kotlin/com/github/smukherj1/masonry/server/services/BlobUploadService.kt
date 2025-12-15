@@ -1,5 +1,6 @@
 package com.github.smukherj1.masonry.server.services
 
+import com.github.smukherj1.masonry.server.configuration.ServerConfiguration
 import com.github.smukherj1.masonry.server.extensions.toHexString
 import com.github.smukherj1.masonry.server.models.BlobModel
 import com.github.smukherj1.masonry.server.models.BlobUploadModel
@@ -27,16 +28,17 @@ import kotlin.io.path.exists
 
 @Service
 class BlobUploadService(
+    val serverConfiguration: ServerConfiguration,
     val blobUploadRepository: BlobUploadRepository,
     val blobRepository: BlobRepository
 ) {
     val log: Logger = LoggerFactory.getLogger(BlobUploadService::class.java)
 
     init {
-        val up = Path(uploadsDir)
+        val up = Path(serverConfiguration.uploadsDir)
         log.info("Creating uploads directory: $up")
         up.createDirectories()
-        val bp = Path(blobsDir)
+        val bp = Path(serverConfiguration.blobsDir)
         log.info("Creating blobs directory: $bp")
         bp.createDirectories()
     }
@@ -205,13 +207,9 @@ class BlobUploadService(
             updateTime = now,
         ))
     }
+
+    private fun uploadPath(uploadId: String): String = "${serverConfiguration.uploadsDir}/$uploadId"
+    private fun blobPath(digest: DigestModel): String = "${serverConfiguration.blobsDir}/${digest.hash.toHexString()}-${digest.sizeBytes}"
 }
-
-private val uploadsDir = "uploads"
-private val blobsDir = "blobs"
-
-private fun uploadPath(uploadId: String) = "$uploadsDir/${uploadId}"
-
-private fun blobPath(digest: DigestModel) = "$blobsDir/${digest.hash.toHexString()}-${digest.sizeBytes}"
 
 private fun localDateTimeNow() = LocalDateTime.now(ZoneOffset.UTC)

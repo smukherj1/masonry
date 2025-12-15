@@ -10,6 +10,8 @@ services:
       - masonry-backend
     environment:
       SPRING_PROFILES_ACTIVE: test
+    volumes:
+      - masonry-server_data:/data
   masonry-db:
     hostname: masonry-db
     image: postgres:18.0-alpine3.22
@@ -40,6 +42,7 @@ services:
 
 volumes:
   masonry-db_data:
+  masonry-server_data:
 
 networks:
   masonry-backend:

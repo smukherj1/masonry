@@ -11,3 +11,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+
+masonry:
+  uploadsDir: testUploads
+  blobsDir: testBlobs

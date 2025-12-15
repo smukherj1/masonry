@@ -9,3 +9,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+masonry:
+  uploadsDir: ${MASONRY_UPLOADS_DIR}
+  blobsDir: ${MASONRY_BLOBS_DIR}

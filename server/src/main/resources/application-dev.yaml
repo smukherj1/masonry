@@ -5,3 +5,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/masonry
     username: masonry
     password: password
+
+# Override the values in application.yaml when running locally.
+masonry:
+  uploadsDir: uploads
+  blobsDir: blobs

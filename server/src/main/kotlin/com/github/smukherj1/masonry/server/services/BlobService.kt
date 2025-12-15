@@ -80,4 +80,6 @@ class BlobService(
 
 }
 
-const val maxDownloadChunkSize: Int = 4 * 1024 * 1024 * 1024 - 1024
+// GRPC RPC message size limit is 4 MB. Leave 1000 byte headroom for other request parameters and internal GRPC
+// overhead.
+const val maxDownloadChunkSize: Int = 4 * 1000 * 1000 - 1000
