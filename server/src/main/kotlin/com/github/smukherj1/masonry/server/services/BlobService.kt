@@ -1,6 +1,5 @@
 package com.github.smukherj1.masonry.server.services
 
-import com.github.smukherj1.masonry.server.models.BlobModel
 import com.github.smukherj1.masonry.server.models.DigestModel
 import com.github.smukherj1.masonry.server.repositories.BlobRepository
 import io.grpc.Status
@@ -22,7 +21,7 @@ class BlobService(
         ?: throw Status.NOT_FOUND.withDescription("blob with digest ${digestModel.toString()} not found")
             .asRuntimeException()
 
-    fun download(digestModel: DigestModel, offset: Long, limit: Long, block: (offset: Long, data: ByteArray) -> Unit) {
+    fun download(digestModel: DigestModel, offset: Long, limit: Long, onNextChunk: (offset: Long, data: ByteArray) -> Unit) {
         val blobModel = query(digestModel)
         require(offset >= 0) { "offset must be positive" }
         require(limit <= Int.MAX_VALUE) { "limit can't exceed ${Int.MAX_VALUE}" }
@@ -32,9 +31,9 @@ class BlobService(
         try {
             RandomAccessFile(blobModel.location, "r").use { file ->
                 file.seek(offset)
-                val chunkSize = if (limit > 0) { min(limit.toInt(), maxDownloadChunkSize) } else { maxDownloadChunkSize};
+                val chunkSize = if (limit > 0) { min(limit.toInt(), maxDownloadChunkSize) } else { maxDownloadChunkSize}
                 val totalBytesToRead = if (limit > 0) { min(limit, file.length()) } else { file.length() }
-                var totalBytesRead = 0L;
+                var totalBytesRead = 0L
 
                 val buffer = ByteArray(chunkSize)
                 while (true) {
@@ -42,7 +41,7 @@ class BlobService(
                     if (bytesRead == -1) break
 
                     if((totalBytesRead + bytesRead) <= totalBytesToRead) {
-                        block(
+                        onNextChunk(
                             totalBytesRead,
                             buffer
                         )
@@ -62,7 +61,7 @@ class BlobService(
                             throw RuntimeException("internal blob chunk size exceeds 32-bit Int Max")
                         }
 
-                        block(
+                        onNextChunk(
                             totalBytesRead,
                             buffer.copyOfRange(0, bytesToCopy.toInt())
                         )
@@ -81,4 +80,4 @@ class BlobService(
 
 }
 
-const val maxDownloadChunkSize: Int = 4 * 1024 * 1024 * 1024 - 1024;
+const val maxDownloadChunkSize: Int = 4 * 1024 * 1024 * 1024 - 1024

@@ -53,6 +53,9 @@ class BlobsUploadController(
 
             override fun onCompleted() {
                 log.info("upload(): uploadId=${uploadId} completed.")
+                if(uploadId != null && serverUploadId != null) {
+                    blobUploadService.clearServerUploadId(uploadId.orEmpty(), serverUploadId.orEmpty())
+                }
                 val respBuilder = BlobUploadResponse.newBuilder()
                 if(nextOffset != null) {
                     respBuilder.setNextOffset(nextOffset ?: 0)
@@ -63,6 +66,9 @@ class BlobsUploadController(
 
             override fun onError(t: Throwable?) {
                 log.info("upload(): uploadId=${uploadId} error: ${t?.localizedMessage}")
+                if(uploadId != null && serverUploadId != null) {
+                    blobUploadService.clearServerUploadId(uploadId.orEmpty(), serverUploadId.orEmpty())
+                }
                 responseObserver.onError(t)
             }
 

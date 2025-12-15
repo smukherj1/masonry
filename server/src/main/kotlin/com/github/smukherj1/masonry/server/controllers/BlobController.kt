@@ -11,6 +11,8 @@ import com.github.smukherj1.masonry.server.services.BlobService
 import com.google.protobuf.ByteString
 import com.google.protobuf.Timestamp
 import io.grpc.stub.StreamObserver
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.grpc.server.service.GrpcService
 import java.time.ZoneOffset
 
@@ -19,9 +21,12 @@ class BlobController(
     val blobService: BlobService
 ) : BlobServiceGrpc.BlobServiceImplBase() {
 
+    val log: Logger = LoggerFactory.getLogger(BlobController::class.java)
+
     override fun download(request: BlobDownloadRequest?, responseObserver: StreamObserver<BlobDownloadResponse?>?) {
         requireNotNull(request) { "request must not be null" }
         if(responseObserver == null) return
+        log.info("download: ${request.digest}, offset=${request.offset}, limit=${request.limit}.")
         blobService.download(DigestModel(request.digest), request.offset, request.limit
         ) { offset, data ->
             responseObserver.safeRun {
@@ -39,6 +44,7 @@ class BlobController(
     override fun query(request: BlobQueryRequest?, responseObserver: StreamObserver<BlobQueryResponse?>?) {
         requireNotNull(request) { "request must not be null" }
         if(responseObserver == null) return
+        log.info("query: ${request.digest}.")
         responseObserver.safeRun {
             val blob = blobService.query(DigestModel(request.digest))
             responseObserver.onNext(

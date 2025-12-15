@@ -18,7 +18,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.jvm.optionals.getOrNull
 import org.slf4j.Logger
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -80,12 +79,11 @@ class BlobUploadService(
             log.error("Error uploading ${data.size} bytes of data for upload $uploadId, server ID $serverUploadId, offset $offset", e)
             throw RuntimeException("error writing ${data.size} bytes of data for upload $uploadId, offset $offset")
         }
-        val now = localDateTimeNow()
-        return blobUploadRepository.save(uploadModel.copy(
-            updateTime = now,
+        return updateBlobUploadModelAfterUpload(
+            uploadId = uploadId,
+            serverUploadId = serverUploadId,
             nextOffset = offset + data.size,
-            hasherState = HasherState(digester.encodedState)
-        ))
+            hasherState = HasherState(digester.encodedState))
     }
 
     fun getUpload(uploadId: String): BlobUploadModel?  = blobUploadRepository.findById(uploadId).getOrNull()
@@ -137,6 +135,44 @@ class BlobUploadService(
             updateTime = localDateTimeNow(),
         ))
         return uploadModel
+    }
+
+    @Transactional
+    fun clearServerUploadId(uploadId: String, serverUploadId: String) {
+        val cur = blobUploadRepository.findById(uploadId).getOrNull()
+        if(cur == null) {
+            log.warn("Ignoring request to clear server upload ID $serverUploadId for upload ID $uploadId because upload ID doesn't exist.")
+            return
+        }
+        if(cur.serverUploadId != serverUploadId) {
+            log.warn("Ignoring request to clear server upload ID $serverUploadId for upload ID $uploadId because db returned a different server upload ID ${cur.serverUploadId}.")
+            return
+        }
+        blobUploadRepository.save(cur.copy(
+            serverUploadId = "",
+            updateTime = localDateTimeNow(),
+        ))
+    }
+
+    @Transactional
+    private fun updateBlobUploadModelAfterUpload(uploadId: String, serverUploadId: String, nextOffset: Long, hasherState: HasherState): BlobUploadModel {
+        val cur = blobUploadRepository.findById(uploadId).getOrNull()
+            ?: throw RuntimeException("could not find upload with ID $uploadId after commiting data for upload")
+
+        if(cur.serverUploadId != serverUploadId) {
+            blobUploadRepository.save(cur.copy(
+                uploadStatus = UploadStatus.FAILED,
+                updateTime = localDateTimeNow(),
+            ))
+            throw IllegalStateException("possible concurrent upload detected for upload ID $uploadId when attempting" +
+            " upload ID $uploadId is now considered failed and must be retried using a new ID")
+        }
+        return blobUploadRepository.save(cur.copy(
+            serverUploadId = "",
+            nextOffset = nextOffset,
+            hasherState = hasherState,
+            updateTime = localDateTimeNow(),
+        ))
     }
 
     @Transactional
