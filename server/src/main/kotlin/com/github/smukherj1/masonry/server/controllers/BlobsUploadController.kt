@@ -79,8 +79,8 @@ class BlobsUploadController(
         if (responseObserver == null) return
         responseObserver.safeRun {
             require(request != null) { "request must not be null" }
-            require(request.uploadId.isNullOrBlank()) { "uploadId must not be null or empty" }
-
+            require(!request.uploadId.isNullOrBlank()) { "uploadId must not be null or empty" }
+            log.info("query(): uploadId=${request.uploadId}.")
             val um = blobUploadService.getUpload(request.uploadId)
 
             if(um == null) {
@@ -107,7 +107,9 @@ class BlobsUploadController(
         responseObserver: StreamObserver<BlobUploadCompleteResponse?>?
     )  {
         requireNotNull(request) { "request must not be null" }
+        require(!request.uploadId.isNullOrBlank()) {"uploadId must not be null or empty"}
         if (responseObserver == null) return
+        log.info("complete(): uploadId=${request.uploadId}.")
         responseObserver.safeRun {
             val blobModel = blobUploadService.completeUpload(request.uploadId)
             responseObserver.onNext(
@@ -116,6 +118,7 @@ class BlobsUploadController(
                         blobModel.digest.proto
                     ).build()
             )
+            responseObserver.onCompleted()
         }
     }
 

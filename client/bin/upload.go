@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	pb "github.com/smukherj1/masonry/client/generated"
 	"google.golang.org/grpc"
@@ -111,7 +112,10 @@ func main() {
 	defer close()
 
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 	if err := doUpload(ctx, clients, *uploadID, *uploadFile); err != nil {
 		log.Fatalf("Unable to upload: %v", err)
 	}
+	log.Println("Upload completed successfully.")
 }
