@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package filesystemservice;
+
+import "digest.proto";
+
+option java_package = "com.github.smukherj1.masonry.server.proto";
+option java_multiple_files = true;
+option java_outer_classname = "FileSystemServiceProto";
+
+service FileSystemService {}
+
+message Directory {
+  repeated DirectoryChild children = 2;
+}
+
+message DirectoryChild {
+  // Name of the child entity in a directory.
+  string name = 1;
+  enum Type {
+    UNKNOWN = 0;
+    FILE = 1; // This is a file. The 'digest' points to a 'File' stored as a blob.
+    SYMLINK = 2; // This is a symlink. The 'digest' points to a 'symlink' stored as a blob.
+    DIRECTORY = 3; // This is a directory. The 'digest' points to a 'Directory' stored as a blob.
+  }
+  Type type = 2;
+  digest.Digest digest = 3;
+}
+
+message File {
+  bool is_executable = 1;
+  digest.Digest contents_digest = 2;
+}
+
+message Symlink {
+  string target = 1;
+}
