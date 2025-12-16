@@ -146,6 +146,9 @@ class BlobUploadService(
             log.warn("Ignoring request to clear server upload ID $serverUploadId for upload ID $uploadId because upload ID doesn't exist.")
             return
         }
+        if(cur.serverUploadId == "") {
+            return
+        }
         if(cur.serverUploadId != serverUploadId) {
             log.warn("Ignoring request to clear server upload ID $serverUploadId for upload ID $uploadId because db returned a different server upload ID ${cur.serverUploadId}.")
             return
@@ -166,8 +169,8 @@ class BlobUploadService(
                 uploadStatus = UploadStatus.FAILED,
                 updateTime = localDateTimeNow(),
             ))
-            throw IllegalStateException("possible concurrent upload detected for upload ID $uploadId when attempting" +
-            " upload ID $uploadId is now considered failed and must be retried using a new ID")
+            throw IllegalStateException("possible concurrent upload detected for upload ID $uploadId when attempting " +
+            "to commit uploaded chunk, upload is now considered failed and must be retried using a new ID")
         }
         return blobUploadRepository.save(cur.copy(
             serverUploadId = "",
@@ -196,14 +199,16 @@ class BlobUploadService(
                 uploadStatus = UploadStatus.ACTIVE,
             ))
         }
-        if (cur.serverUploadId != serverUploadId) {
+        if (cur.serverUploadId != "" && cur.serverUploadId != serverUploadId) {
             blobUploadRepository.save(cur.copy(
                 updateTime = now,
                 uploadStatus = UploadStatus.FAILED
             ))
-            throw IllegalStateException("Possible concurrent uploads detected for upload ID $uploadId, upload is now considered corrupted and a new upload with a different ID must be attempted")
+            throw IllegalStateException("possible concurrent upload detected for upload ID $uploadId when preparing to " +
+                    "commit new chunk, upload is now considered failed and must be retried using a new ID")
         }
         return blobUploadRepository.save(cur.copy(
+            serverUploadId = serverUploadId,
             updateTime = now,
         ))
     }

@@ -8,5 +8,5 @@ spring:
 
 # Override the values in application.yaml when running locally.
 masonry:
-  uploadsDir: uploads
-  blobsDir: blobs
+  uploadsDir: data/uploads
+  blobsDir: data/blobs

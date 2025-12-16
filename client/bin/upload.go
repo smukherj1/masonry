@@ -54,27 +54,34 @@ func doUpload(ctx context.Context, clients *clients, uploadID, filePath string) 
 	offset := uint64(0)
 	// Stay within the 4 MB GRPC request limit.
 	chunk := make([]byte, 4*1000*1000-1000)
+	completed := false
 	for {
 		nBytes, err := file.Read(chunk)
 		if err == io.EOF {
+			completed = true
 			break
 		}
 		if err != nil {
 			return fmt.Errorf("error reading file %q while uploading, %v bytes read so far: %w", filePath, offset, err)
 		}
-		log.Printf("Uploading chunk %v/%v bytes read so far\n", offset, fileInfo.Size())
+		log.Printf("Uploading chunk of size %v with offset %v out of total %v bytes\n", nBytes, offset, fileInfo.Size())
 		if err := stream.Send(&pb.BlobUploadRequest{
 			UploadId: uploadID,
 			Data:     chunk[:nBytes],
 			Offset:   offset,
-		}); err != nil {
-			return fmt.Errorf("unable to upload: %w", err)
+		}); err == io.EOF {
+			break
+		} else if err != nil {
+			return fmt.Errorf("error uploading chunk of size %v with offset %v out of total %v bytes: %w", nBytes, offset, fileInfo.Size(), err)
 		}
 		offset += uint64(nBytes)
 	}
 	uploadResp, err := stream.CloseAndRecv()
 	if err != nil {
 		return fmt.Errorf("unable to upload: %w", err)
+	}
+	if !completed {
+		return fmt.Errorf("upload terminated by server, %v bytes uploaded out of %v bytes", offset, fileInfo.Size())
 	}
 	log.Printf("Upload completed with upload ID %q, total bytes uploaded %v/%v\n", uploadID, uploadResp.NextOffset, fileInfo.Size())
 
